@@ -1,0 +1,38 @@
+function [SD M CV] = calc_CVmov(a,b)
+
+kinem1 = a.kinem;
+kinem2 = b.kinem;
+count = 0;
+for i = 1:size(kinem1,3)
+    tmpx1 = squeeze(kinem1(:,1,i));
+    tmpx1=tmpx1(~isnan(tmpx1));
+    tmpy1 = squeeze(kinem1(:,2,i));
+    tmpy1=tmpy1(~isnan(tmpy1));
+    if length(tmpx1)>=30
+        count=count+1;
+        kinem_new1(:,:,count)=[tmpx1(1:30) tmpy1(1:30)];
+    end
+end
+
+count = 0;
+for i = 1:size(kinem2,3)
+    tmpx2 = squeeze(kinem2(:,1,i));
+    tmpx2=tmpx2(~isnan(tmpx2));
+    tmpy2 = squeeze(kinem2(:,2,i));
+    tmpy2=tmpy2(~isnan(tmpy2));
+    if length(tmpx2)>=30
+        count=count+1;
+        kinem_new2(:,:,count)=[tmpx2(1:30) tmpy2(1:30)];
+    end
+end
+
+SD.ear1 = std(kinem_new1(:,:,6:35),0,3);
+M.ear1 = mean(kinem_new1(:,:,6:35),3);
+SD.ear2 = std(kinem_new2(:,:,6:35),0,3);
+M.ear2 = mean(kinem_new2(:,:,6:35),3);
+SD.late1 = std(kinem_new1(:,:,end-29:end),0,3);
+M.late1 = mean(kinem_new1(:,:,end-29:end),3);
+
+CV.ear1 = SD.ear1./M.ear1
+CV.late1 = SD.late1./M.late1
+CV.ear2 = SD.ear2./M.ear2 

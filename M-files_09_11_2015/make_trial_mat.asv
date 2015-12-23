@@ -1,0 +1,14 @@
+function [datamat] = make_trial_mat(marker,data,dur,pos)
+data = zscore(data);
+if pos >1
+    pre = 0;
+    post = dur;
+else
+    pre = -dur;
+    post = 0;
+    for j = 1:length(marker)
+        t = marker(j);
+        datamat(j,:,:)=data(:,round(t+pre):round(t+post));
+    end
+end
+    

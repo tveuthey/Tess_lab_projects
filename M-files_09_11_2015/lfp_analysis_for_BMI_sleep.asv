@@ -1,0 +1,51 @@
+function [Output]=lfp_analysis_for_BMI_sleep (data, Fs_lfp, wave, ind_pre, ind_post)
+close all;
+med_LFP=median(data(:,:));
+time_pre=ind_pre(1):ind_pre(end);
+time_post=ind_post(1):ind_post(end);
+med_LFPpre=med_LFP(:,time_pre);
+med_LFPpost=med_LFP(:,time_post);
+
+med_LFP_pre1=resample(med_LFPpre, 1000, round(Fs_lfp));
+med_LFP_post1=resample(med_LFPpost, 1000, round(Fs_lfp));
+
+cat_LFP{1}=med_LFP_pre1;
+cat_LFP{2}=med_LFP_post1;
+
+for i=[1 2]
+    data_LFP(i,:)=cat_LFP{i};
+    %%plotting STFT
+    T = 0:0.001:(length(data_LFP(i,:))/1000);
+    subplot(2,2,[i]+2)
+    spectrogram(data_LFP(i,:))
+    ylabel('Time ','FontSize',14,'FontWeight','BOLD'); xlabel('Hz','FontSize',14,'FontWeight','BOLD');
+    set(gca,'FontSize',14,'FontWeight','BOLD' )
+    % [S,F,T,P] = spectrogram(X,256,250,256,1E3);
+    % surf(T,F,10*log10(P),'edgecolor','none'); axis tight;
+    % view(0,90);
+%     xlabel('Time (Seconds)'); ylabel('Hz');
+    %plotting FFT
+    
+    NFFT (i,:) = 2^nextpow2(length(data_LFP(i,:))); % Next power of 2 from length of y
+    Y = fft(data_LFP(i,:),NFFT(i,:))/length(data_LFP(i,:));
+    f = 1000/2*linspace(0,1,NFFT(i,:)/2+1);
+    
+    % Plot single-sided amplitude spectrum.
+    subplot(2,2,[1 2])
+    if i==1
+        plot(f,2*abs(Y(1:NFFT(i,:)/2+1)),'b')
+    else
+        plot(f,2*abs(Y(1:NFFT(i,:)/2+1)),'r')
+    end
+    hold on;
+    title('Single-Sided Amplitude Spectrum of LFP','FontSize',14,'FontWeight','BOLD')
+    xlabel('Frequency (Hz)','FontSize',14,'FontWeight','BOLD'); XLim([0 5])
+    ylabel('Amplitude','FontSize',14,'FontWeight','BOLD')
+    legend('Pre','Post','Location','NorthEastest')
+end
+    
+               filename=['C:\Users\Ganguly Lab\Documents\MATLAB\Tanuj\Mat_files\Result_figs\BMI\S34\4_10_13\Sleep-LFP.tiff'];
+%                set(gcf, 'Position', get(0,'Screensize')); 
+%                saveas(gcf,filename);
+
+Output=Y;

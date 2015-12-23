@@ -1,0 +1,372 @@
+function [hold_s1d_tpre, ripl_pre, hold_s1d_tpost, ripl_post, change]=ripple_sleep_cat3_partial(units,lim,TimeStamps,sleep_ind_pre,sleep_ind_post,data, Fs_lfp, chan_no,sc, freq)
+close all
+
+% if isempty(chan_no)==1
+%         nch = 1;
+% else nch=0;
+% end
+    
+for i=1:length(units)
+    Peaks_diff = zeros(4,8);
+%    X_loc = [1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3];
+ %   Y_loc = [8,4,7,3,6,2,5,1,4,8,3,7,2,6,1,5,8,4,7,3,6,2,5,1,4,8,3,7,2,6,1,5];
+%     meagrid = [8,6,4,2,7,5,3,1,15,13,11,9,16,14,12,10,31,29,27,25,32,30,28,26,24,22,20,18,23,21,19,17];
+    close;
+    unit=units(i);
+    
+    lim1=lim(1);
+    lim2=lim(2);
+    lim3=lim(3);
+   
+    for ch = 1:64
+        chan_no = [ch];
+        if chan_no==1
+            loc=[9];
+        elseif chan_no==2
+            loc=[10];
+        elseif chan_no==3
+            loc=[11];
+        elseif chan_no==4
+            loc=[12];
+        elseif chan_no==5
+            loc=[13];
+        elseif chan_no==6
+            loc=[14];
+        elseif chan_no==7
+            loc=[15];
+        elseif chan_no==8
+            loc=[16];
+        elseif chan_no==9
+            loc=[1];
+        elseif chan_no==10
+            loc=[2];
+        elseif chan_no==11
+            loc=[3];
+        elseif chan_no==12
+            loc=[4];
+        elseif chan_no==13
+            loc=[5];
+        elseif chan_no==14
+            loc=[6];
+        elseif chan_no==15
+            loc=[7];
+        elseif chan_no==16
+            loc=[8];
+        elseif chan_no==17
+            loc=[9];
+        elseif chan_no==18
+            loc=[10];
+        elseif chan_no==19
+            loc=[31];
+        elseif chan_no==20
+            loc=[27];
+        elseif chan_no==21
+            loc=[30];
+        elseif chan_no==22
+            loc=[26];
+        elseif chan_no==23
+            loc=[29];
+        elseif chan_no==24
+            loc=[25];
+        elseif chan_no==25
+            loc=[20];
+        elseif chan_no==26
+            loc=[24];
+        elseif chan_no==27
+            loc=[19];
+        elseif chan_no==28
+            loc=[23];
+        elseif chan_no==29
+            loc=[18];
+        elseif chan_no==30
+            loc=[22];
+        elseif chan_no==31
+            loc=[17];
+        elseif chan_no==32
+            loc=[21];
+        end
+%       badloc = [1,2,3,16,21,22,23];  
+%       if isempty(find(badloc==loc, 1))
+   if length(chan_no)==1          
+   temp1=(data([chan_no],:));
+   temp=base_norm(temp1);
+%     if length(chan_no)==1
+%         temp1=(data([chan_no],:));
+%         temp=base_norm(temp1);
+%     else
+%         temp1=(median(data([chan_no],:)));
+%         temp=base_norm(temp1);
+%     end
+%     
+    
+%     if isempty(TimeStamps{chan_no,sc})==1
+%         disp('no need to interpolate around spikes')
+%     else
+%      if isnan(TimeStamps{chan_no,sc})==1
+%           disp('no need to interpolate around spikes')
+%      else 
+%          TS_tr=round(TimeStamps{chan_no,sc}*Fs_lfp);
+%          tic
+%          for i=1:100%:length(TS_tr)
+%              
+%              temp2=interp1(1:length(temp),temp,((TS_tr(i)-2):(TS_tr(i)+8)));
+%              temp= [temp(1,1:(TS_tr(i)-3)),temp2,temp(1,(TS_tr(i)+9):end)];
+% %              temp=cat(2,[temp(:,1:(TS_tr(i)-3))],temp2,[temp(:,(TS_tr(i)+9):end)]);
+%              
+% %             disp('i')
+%          end
+%          toc
+%      end
+%     end
+
+    
+    
+    srate = Fs_lfp;
+    nyq_sample=srate/2;
+    if freq==1
+        
+        FILTER_ORDER=3;
+        f_lo=4;
+        f_hi=0.4;
+        [b2,a2]=butter(FILTER_ORDER,[f_hi f_lo]/nyq_sample);
+%         [b2,a2]=cheby2(FILTER_ORDER,20,[f_hi f_lo]/nyq_sample);
+        temp=(filtfilt(b2,a2,temp));
+        
+    else
+        if freq==2
+           
+            FILTER_ORDER=5;
+            f_lo=20;
+            f_hi=8;
+            [b2,a2]=butter(FILTER_ORDER,[f_hi f_lo]/nyq_sample);
+%            [b2,a2]=cheby1(FILTER_ORDER,20,[f_hi f_lo]/nyq_sample);
+            temp=(filtfilt(b2,a2,temp));
+        else
+            if freq==3
+%                 
+%                 
+                FILTER_ORDER=3;
+                f_lo=8;
+                f_hi=4;
+                [b2,a2]=butter(FILTER_ORDER,[f_hi f_lo]/nyq_sample);
+                temp=(filtfilt(b2,a2,temp));
+
+            end
+        end
+    end
+    temp1=(temp-mean(temp))/(std(temp));
+    TS10=TimeStamps{unit,sc}*Fs_lfp;
+    len=1016;
+    clear TS10_s1 TS10_s2
+    TS10_s1=[];
+    TS10_s2=[];
+    length_sws = 0;
+    for n=1:size(sleep_ind_pre,1)        
+        %     clear TS10_s1
+        sws1=[sleep_ind_pre(n,1):sleep_ind_pre(n,2)];
+        % sws2=[sleep_ind_post(1):sleep_ind_post(end)];
+        %     figure
+        s_ts=find(TS10>sws1(1));
+        e_ts=find(TS10<sws1(end));
+        ts=intersect(s_ts,e_ts);
+        % TS10_s1=TS10(ts);
+        TS10_s1=[TS10_s1 TS10(ts)];
+        size(TS10_s1);
+        length_sws = length_sws+(sleep_ind_pre(n,2) - sleep_ind_pre(n,1));
+        if length_sws>600000
+            break;
+        end
+        
+    end
+        trllngth = 'half';    
+        Num=length(TS10_s1);   
+    disp('Num')
+    hold_s1d=zeros(Num,len);
+    
+    for n=1:Num
+        ind=round(TS10_s1(n));
+        pre_ind=ind-round(len/2)+1;
+        post_ind=ind+round(len/2);
+        hold_s1d(n,:)=temp1(pre_ind:post_ind);
+    end
+    
+    hold_s1d_tp=hold_s1d';
+    hold_s1d_tpre=hold_s1d;
+    ripl_pre=reshape(hold_s1d_tp,1,(Num*len));
+    sta=mean(hold_s1d);
+    sta_min1=min(sta(:,lim1:lim3));
+    sta_max1=max(sta(:,lim1:lim2));
+    sta_max2=max(sta(:,lim2:lim3));
+    sta_max3=(sta_max1+sta_max2)/2;
+    subplot(4,8,loc); 
+    if chan_no==unit
+        spcol = 'Yellow'
+        yk = X_loc(chan_no);
+        xk = Y_loc(chan_no);
+    else spcol = 'White';
+    end
+    set(subplot(4,8,loc),'Color',spcol)
+    peak1=sta_max3-sta_min1;
+%     plot(sta-mean(sta),'LineWidth',3)
+    sta_sd=std(hold_s1d)/sqrt(Num-1); hold on;
+%     plot((sta-mean(sta))+(2*sta_sd));
+%     plot((sta-mean(sta))-(2*sta_sd));
+%     
+    shadedErrorBar([],(sta-mean(sta)),(1 *sta_sd),'g',0)
+    xlim([0 1017]);
+   
+%     plot((sta-mean(sta))+(1*sta_sd));
+%     plot((sta-mean(sta))-(1*sta_sd));
+    hold on;
+    length_sws = 0;
+    Mov_pre(X_loc(chan_no),Y_loc(chan_no),:)=sta;    
+        
+    for n=1:size(sleep_ind_post,1)
+        %     clear TS10_s1
+        % sws1=[sleep_ind_pre(n,1):sleep_ind_pre(n,2)];
+        sws2=[sleep_ind_post(n,1):sleep_ind_post(n,2)];
+        s_ts=find(TS10>sws2(1));
+        e_ts=find(TS10<sws2(end));
+        ts=intersect(s_ts,e_ts);
+        TS10_s2=[TS10_s2 TS10(ts)];
+        length_sws = length_sws+(sleep_ind_post(n,2) - sleep_ind_post(n,1));
+        if length_sws>600000
+            break;
+        end
+    end
+    
+%     if trllngth == 'half'
+%     
+%     %%%% First Half_trial
+% %     Num=round(length(TS10_s2)/2);
+%     
+%     %%%% Second Half_trial
+%     else
+    
+    Num=length(TS10_s2);
+    disp('Num')
+    hold_s1d=zeros(Num,len);
+    
+    for n=1:Num
+        ind=round(TS10_s2(n));
+        pre_ind=ind-round(len/2)+1;
+        post_ind=ind+round(len/2);
+        hold_s1d(n,:)=temp1(pre_ind:post_ind);
+    end
+    
+    hold_s1d_tp=hold_s1d';
+    hold_s1d_tpost=hold_s1d;
+    ripl_post=reshape(hold_s1d_tp,1,(Num*len));
+    sta=mean(hold_s1d);
+    sta_min2=min(sta(:,lim1:lim3));
+    sta_max2=max(sta(:,lim2:lim3));
+    sta_max1=max(sta(:,lim1:lim2));
+    sta_max3=(sta_max1+sta_max2)/2;
+    peak2=sta_max3-sta_min2;
+    sta_sd=std(hold_s1d)/sqrt(Num-1);
+    hold on
+    shadedErrorBar([],(sta-mean(sta)),(1*sta_sd),'r',0)
+%      pause;
+     Mov_post(X_loc(chan_no),Y_loc(chan_no),:)=sta;
+     Mov_diff = Mov_post - Mov_pre;
+    change1=((peak2-peak1)/peak1)*100;
+    c=['change' num2str(unit)];
+    change{i}=change1;
+     Session='T28\Session1_Sleep_Block1\';
+    Dur='10mins'
+    if chan_no == unit
+        if freq==1
+            t=['Pre-Post SWA' Dur 'Ch' num2str(unit)];
+        elseif freq==2
+            t=['Pre-Post Spindle' Dur 'Ch' num2str(unit)];
+        else
+            t=['Pre-Post Theta' Dur 'Ch' num2str(unit)];
+        end
+      title(t)
+    end
+      
+    xlab=['averaged to' num2str([chan_no])];
+    xlabel(xlab);
+   Peaks_diff(X_loc(chan_no),Y_loc(chan_no))=change1;
+%    Peaks_diff(ch,2)=stdev();
+      end
+    end
+    
+    % plot(sta-mean(sta),'r','LineWidth',3);
+    % plot((sta-mean(sta))+sta_sd,'r');
+    % plot((sta-mean(sta))-sta_sd,'r');
+    
+    if sc==2
+        if freq==1
+            filename=['C:\Users\dhaks_000\Documents\MATLAB\Dhakshin\Mat_files\raw_data\Reach\' Session 'Sleep SWA post-' Dur 'SC1 Ch' num2str(unit) '.tiff'];
+        else
+            if freq==2
+                filename=['C:\Users\dhaks_000\Documents\MATLAB\Dhakshin\Mat_files\raw_data\Reach\' Session 'Sleep Spindle post-' Dur 'SC1 Ch' num2str(unit) '.tiff'];
+            else
+                if freq==3
+                    filename=['C:\Users\dhaks_000\Documents\MATLAB\Dhakshin\Mat_files\raw_data\Reach\' Session 'Sleep Theta post-' Dur 'SC1 Ch' num2str(unit) '.tiff'];
+                end
+            end
+        end
+    else
+        if sc==3
+            if freq==1
+                filename=['C:\Users\dhaks_000\Documents\MATLAB\Dhakshin\Mat_files\raw_data\Reach\' Session 'Sleep SWA post-' Dur 'SC2 Ch' num2str(unit) '.tiff'];
+            else
+                if freq==2
+                    filename=['C:\Users\dhaks_000\Documents\MATLAB\Dhakshin\Mat_files\raw_data\Reach\' Session 'Sleep Spindle post-' Dur 'SC2 Ch' num2str(unit) '.tiff'];
+                else
+                    if freq==3
+                        filename=['C:\Users\dhaks_000\Documents\MATLAB\Dhakshin\Mat_files\raw_data\Reach\' Session 'Sleep Theta post-' Dur 'SC2 Ch' num2str(unit) '.tiff'];
+                    end
+                end
+            end
+        end
+    end
+    set(gcf, 'Position', get(0,'Screensize')); % Maximize figure
+    set(gcf,'color','w');
+    f = getframe(gcf); imwrite(f.cdata,filename,'Compression','none')
+%     pause;
+    close all;
+    figure;
+%     Peaks_diff = reshape(Peaks_diff,4,8);
+    filename2 = strrep(filename, 'Ch', 'bar_CHART');
+    Peaks_diffc = Peaks_diff;
+%     Peaks_diffc(1,5,19,23,27)=NaN
+%     Peaks_diffc(Peaks_diffc>400)=NaN;
+    bh = bar3(Peaks_diffc);
+%     colormap cool;
+%     colorbar;
+    zlim([-50 150]);
+    text(xk,yk,Peaks_diff(yk,xk)+20,'Unit_CH');
+
+    
+%     for ii = 1:size(Peaks_diffc,1)
+%         for jj = 1:size(Peaks_diffc,2)
+    colormap cool
+%     colorbar
+%     % Tell handle graphics to use interpolated rather than flat shading
+    shading interp
+% For each barseries, map its CData to its ZData
+    for i = 1:length(bh)
+    zdata = get(bh(i),'ZData');
+    set(bh(i),'CData',zdata)
+    % Add back edge color removed by interpolating shading
+    set(bh,'EdgeColor','k') 
+    end
+    set(gcf, 'renderer', 'zbuffer');
+    
+    colorbar;
+%         end
+%     end
+%     set(gcf, 'Position', get(0,'Screensize')); % Maximize figure
+    set(gcf,'color','w');
+    f = getframe(gcf); imwrite(f.cdata,filename2,'Compression','none')
+    close all;
+    %   pause;
+end
+
+
+
+
+

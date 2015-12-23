@@ -1,0 +1,97 @@
+%function [new]=concatenate_neural_events_2blocs(Block_1,Block_2)
+clear all;
+Block_1 = 'data_blockallTS_DemoTank2_Block-165.mat';
+Block_2='data_blockallTS_DemoTank2_Block-167.mat';
+close all;
+Blockx=num2str(Block_1);
+Blocky=num2str(Block_2);
+% Blockz=num2str(Block_3);
+% Blockz1=num2str(Block_4);
+% Blockz2=num2str(Block_5);
+
+
+%cd('C:\Users\dhaks_000\Documents\MATLAB\Dhakshin\Mat_files\raw_data\Reach\T28')
+x=load(Blockx);
+y=load(Blocky);
+% z=load(Blockz);
+% z1=load(Blockz1);
+% z2=load(Blockz2);
+% y=load(Blocky); 
+
+% getting data out of two struct arrays
+%data_x=x.data;
+% N_x=x.N;
+% TimeStamps_x=x.TimeStamps;
+% Waves_x=x.Waves;
+% Fs_lfp_x=x.Fs_lfp;
+% wave_x=x.wave;
+% data_x=x.data;
+
+%data_y=y.data;
+% N_y=y.N;
+% TimeStamps_y=y.TimeStamps;
+% Waves_y=y.Waves;
+% Fs_lfp_y=y.Fs_lfp;
+% wave_y=y.wave;
+
+new(1).Fs_lfp=x.Fs_lfp;
+[r c]=size(x.N);
+time_add=length(x.data)/x.Fs_lfp;
+time_add2=(length(y.data)/x.Fs_lfp)+time_add;
+
+for j=1:c
+    for i=1:r
+        if isnan(x.TimeStamps{i,j})  %&& isempty (z(1).TimeStamps{i,j})==1 %&& isempty (z1(1).TimeStamps{i,j})==1&& isempty (z2(1).TimeStamps{i,j})==1
+            if isnan(y.TimeStamps{i,j})
+%                 new.TimeStamps{i,j}=[NaN];
+                new.Waves{i,j}=[NaN];
+%                 new.N{i,j}=[NaN];
+            else
+%                 new.TimeStamps{i,j}=[y.TimeStamps{i,j}+time_add];
+                new.Waves{i,j}=[y.Waves{i,j}];
+%                 new.N{i,j}=[NaN];
+            end
+            
+       else
+            if isnan(y.TimeStamps{i,j})
+%                 new.TimeStamps{i,j}=[x.TimeStamps{i,j}];
+                new.Waves{i,j}=[y.Waves{i,j}];
+%                 new.N{i,j}=[NaN];
+            else
+            
+%             new.TimeStamps{i,j}=[x(1).TimeStamps{i,j} y.TimeStamps{i,j}+time_add ];%z.TimeStamps{i,j}+time_add2];% z1.TimeStamps{i,j}+time_add3 z2.TimeStamps{i,j}+time_add4];
+            new.Waves{i,j}=[x(1).Waves{i,j} y.Waves{i,j}];
+%             new.N{i,j}=[x(1).N{i,j}+y.N{i,j}];%+z.N{i,j}];%+z1.N{i,j}+z2.N{i,j}];
+            end
+        end
+    end
+end
+
+%     for i=1:32
+%         new.data(i,:)=[x(1).data(i,:) y.data(i,:) ];
+%         new.SpkData(i,:)=[x.SpkData(i,:) y.SpkData(i,:) ];  
+%     end
+%new.data = [x.data; y.data];
+% new.SpkData=[x.SpkData;y.SpkData];  
+% 
+% new(1).wave=[x(1).wave(1,:) y.wave(1,:) ];
+
+%data=new.data;
+% Fs_lfp=new.Fs_lfp;
+Waves=new.Waves;
+% N=new.N;
+% TimeStamps=new.TimeStamps;
+% wave=new.wave;
+% SpkData = new.SpkData;
+%subplot(2,1,1);plot(wave)
+%subplot(2,1,2);plot(data(1,:))
+
+
+fname = strcat('data_block_T12_CatW',Blockx,Blocky);
+cd ('C:\Users\dhaks_000\Documents\MATLAB\Dhakshin\Mat_files\raw_data\Reach\T39')
+%save (fname, 'Waves','Fs_lfp' ,'wave', 'TimeStamps', 'N', 'data', 'SpkData')
+save (fname, 'Waves','-v7.3')
+
+
+
+

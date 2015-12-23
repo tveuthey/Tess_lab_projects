@@ -1,0 +1,79 @@
+function [succ] = view_video (im_file,step,t_drop,t_lat,DISP)
+
+if ~exist('DISP')
+    DISP=1;
+end
+
+if t_drop == 0
+    drop=0;
+    return
+end
+
+
+THRESH_DETECT=50;
+thresh_range=1:60;
+base_range=1:10;
+
+
+f_rate=1/mean(diff(t_lat));
+d_frame=round(f_rate*t_drop)
+
+len=size(im_file,4)
+close all;
+
+if DISP == 1
+    figure
+    %     set(gcf,'Position',[92   866   625   497]);
+    set(gcf,'Position',[92   166   625   497]);
+    subplot('Position',[0 0 1 1])
+    x=imshow(im_file(:,:,:,1));
+    
+%     figure
+%     set(gcf,'Position',[ 63   193   625   497]);
+%     subplot('Position',[0 0 1 1])
+%     x2=imshow(im_file(:,:,:,1));
+end
+
+% defines ROI
+%x1=[51.7032  102.6972  110.2304   25.0473];
+%y1=[100.6046 97.9970 144.3551  142.3270];
+x1=[102.4074 100.3793 58.3672 58.9467 36.9266 1.2887 1.8682];
+y1=[143.1962 93 93.3612 48.1620 4.1217 3.8320 141.4577];
+
+% creates a filter for the ROI
+m=poly2mask(x1,y1,144,176);
+
+base_im=im_file(:,:,:,1);
+m_im3=[];
+tmpsz = size(im_file);
+for n=(d_frame-30):step:(d_frame+30)
+    if (n-1>0 && n<tmpsz(4))
+        im=im_file(:,:,:,n);
+        im2=(im_file(:,:,:,n));
+        im2(m)=256; %create mask
+        base_im=(im_file(:,:,:,n-1));
+        im3=imsubtract(im,base_im);  %image differential
+        im3=rgb2gray(im3);
+        im3=medfilt2(im3,[3 3]); % cleans image with diff filter
+        m_im3=[m_im3 max((im3(m)))];
+        
+        if DISP == 1
+            set(x,'CData',im2)
+            %         set(x2,'CData',im3)
+            pause(0.1)
+        end
+    end
+end
+
+
+% figure;
+% plot(m_im3)
+% ylim([0 150]);
+
+%base_vals=mean(m_im3(base_range))
+%e_vals = max(m_im3(thresh_range));
+e_vals = max(m_im3(thresh_range));
+succ= e_vals < THRESH_DETECT;
+
+end
+

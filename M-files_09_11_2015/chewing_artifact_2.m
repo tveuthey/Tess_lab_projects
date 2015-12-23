@@ -1,0 +1,167 @@
+
+% 
+% clear
+% 
+% 
+% load data_block344spikewaves1.mat
+% data_block_DemoTank2_Block-565.mat
+
+%temp2=temp2(block);
+%lever1=lever1(block);
+%Slever2=lever2(block);
+
+% find the trial data (ALWAYS RUN PRIOR TO BELOW)
+figure
+temp3=wave(1,:)>.05;
+plot(temp3)
+hold on
+start=diff(temp3)>0.5;
+[start]=find(start==1);
+
+%hold_index again
+
+temp3=wave(1,:)>2;
+plot(temp3)
+hold on
+start=diff(temp3)>0.5;
+[start]=find(start==1);
+
+two_pulses=diff(start);
+two_pulses2=find(two_pulses<40);
+
+
+%only look for two pulse
+hold_index=[];
+
+for n=2:(length(two_pulses2)-2)
+    temp1=two_pulses(two_pulses2(n)+1);
+    temp2=two_pulses(two_pulses2(n)-1);
+    if (temp1  > 40) && (temp2 > 40)
+        hold_index=[hold_index (two_pulses2(n))];
+    end
+end
+
+plot(start(hold_index),[1],'rx')
+Reward=start(hold_index);
+
+%only look for three pulse
+hold_index1=[];
+
+for n=2:(length(three_pulses2)-1)
+    hold_index1=[hold_index1 (three_pulses2(n))];
+ end
+
+plot(start(hold_index1),[1],'kx','MarkerSize',12)
+Reach=start(hold_index1);
+
+% for i=1:length(Reward)-1
+%     Reach_ind=find(Reach>Reward(i) & Reach<Reward(i)+10000, 1,'last');
+%     ReachN(:,i)=Reach(Reach_ind)
+%     disp(i)
+% end
+% plot(start(hold_index),[1],'rx')
+Reward=start(hold_index);
+% plot(start(hold_index1),[1],'kx')
+Reach=start(hold_index);
+
+
+%Reach=start(hold_index1([2 3 4 7 9 10 11 12 13 14 16 18 22 24]));
+
+%% get LFP data
+close all
+
+figure
+FILTER_ORDER=4;
+END_SMOOTHING=100;
+
+srate = Fs_lfp;
+nyq_sample=srate/2;
+f_lo=300;
+f_hi=100;
+[b,a]=butter(FILTER_ORDER,f_hi/nyq_sample,'high');
+[d,c]=butter(FILTER_ORDER,10/nyq_sample,'high');
+
+
+lfp_chan=[1 3 5 7 2 4 6 8];
+time_before=1000;
+time_after=6000;
+
+lfp_chan=4;    
+
+for n=1:length(Reach)
+
+    disp(n)
+    subplot(4,1,1);
+    plot(wave(1,(Reach(n)-time_before):(Reach(n)+time_after)))
+    hold on
+
+    subplot('Position',[0.13 0.3 0.77 0.45])
+    hold on;
+    temp=data(lfp_chan,round(((Reach(n)-time_before):(Reach(n)+time_after))/2));
+    temp=(temp-mean(temp))/std(temp);
+    data_filt1=(abs(filter(b,a,temp))).^2;
+    %data_filt1=smooth(data_filt1,END_SMOOTHING);
+    data_filt1=conv(data_filt1,ones(50,1))/50;
+    %data_filt1=(data_filt1-mean(data_filt1))/(10*std(data_filt1));
+
+    plot(data_filt1/0.5+n)
+    %ylim ([0 0.5])
+    tL=data_filt1;
+    tL=tL-mean(tL);
+    tL=tL(2000:7000);
+    
+    subplot(4,1,4)
+    Fs = Fs_lfp;                    % Sampling frequency
+    T = 1/Fs;                     % Sample time
+    L = 5000;                     % Length of signal
+    t = (0:L-1)*T;                % Time vector
+
+    
+    NFFT = 2^nextpow2(L); % Next power of 2 from length of y
+    Y = fft(tL,NFFT)/L;
+    f = Fs/2*linspace(0,1,NFFT/2+1);
+    %subplot(2,1,2)
+    % Plot single-sided amplitude spectrum.
+        
+    sm_power=conv(2*abs(Y(1:NFFT/2+1)),ones(10,1));
+    plot(f(1:200),sm_power(1:200))
+    hold on;
+    hold_val(n)=mean(sm_power(36:44));
+    plot(2.5,mean(sm_power(35:45)),'rx');
+    %plot(f,2*abs(Y(1:NFFT/2+1)))
+    title('Single-Sided Amplitude Spectrum of y(t) --> 2,5, 100 Hz signals')
+    xlabel('Frequency (Hz)')
+ 
+end
+
+
+label=kmeans(hold_val,2,'Distance','sqEuclidean','Replicates',10),'Matrix',[min(hold_val) max(hold_val)];
+corr=find(label==2);
+incorr=find(label==1);
+hold on
+plot(3,hold_val(incorr),'k+'); 
+plot(3,hold_val(corr),'r+')
+
+figure
+for n=1:50    
+    %subplot('Position',[0.13 0.3 0.77 0.45])
+    hold on;
+    temp=data(lfp_chan,round(((Reach(n)-time_before):(Reach(n)+time_after))/2));
+    temp=(temp-mean(temp))/std(temp);
+    data_filt1=(abs(filter(b,a,temp))).^2;
+    data_filt1=conv(data_filt1,ones(50,1))/50;
+    
+    if ismember(n,corr)
+        plot(data_filt1/0.5+n,'r')
+    else
+        plot(data_filt1/0.5+n,'k')
+    end
+end
+ylim([0 51])
+
+title(length(corr)/50)
+
+
+
+
+

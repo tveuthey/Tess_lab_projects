@@ -1,0 +1,69 @@
+% Bradley Voytek
+% Copyright (c) 2010
+% University of California, Berkeley
+% Helen Wills Neuroscience Institute
+
+% GET PAC
+%load('raw_data.mat'); % Data is 2D array with each row containing the raw timeseries for each channel
+
+alldata = {data1,data2};
+sleepblks = {sleep_ind_pre1,sleep_ind_post1};
+
+for a = 1:2
+    tmpdata = alldata{a};
+    tmpslpblk = sleepblks{a};
+    raw_data = tmpdata(:,tmpslpblk(1,1):tmpslpblk(1,2)); 
+% Put data in common average reference
+    ref = mean(raw_data, 1);
+for x = 1:size(raw_data, 1)
+    raw_data(x, :) = raw_data(x, :) - ref;
+end
+clear x ref
+ 
+low_frequency = [0.5 4]; % define theta and alpha bands
+high_frequency = [8 18]; % define gamma band
+sampling_rate = 1017.25; % define sampling rate
+
+% Initialize PAC variable
+pac = zeros([size(raw_data, 1) size(low_frequency, 1) size(high_frequency, 1)]);
+
+% Calculate PAC
+
+for chanIt = 1:4%size(raw_data, 1)
+    signal = raw_data(chanIt, :);
+ 
+    for lowIt = 1:size(low_frequency, 1)
+        tic
+        disp(['Channel ' num2str(chanIt) ' Low Frequency ' num2str(lowIt)]);
+        
+        % Extract low frequency analytic phase
+        low_frequency_phase = eegfilt(signal, sampling_rate, low_frequency(lowIt, 1), []);
+        low_frequency_phase = eegfilt(low_frequency_phase, sampling_rate, [], low_frequency(lowIt, 2));
+        low_frequency_phase = angle(hilbert(low_frequency_phase));
+ 
+        for highIt = 1:size(high_frequency, 1)
+            % Extract low frequency analytic phase of high frequency analytic amplitude
+            high_frequency_phase = eegfilt(signal, sampling_rate, high_frequency(highIt, 1), []);
+            high_frequency_phase = eegfilt(high_frequency_phase, sampling_rate, [], high_frequency(highIt, 2));
+            high_frequency_phase = abs(hilbert(high_frequency_phase));
+            high_frequency_phase = eegfilt(high_frequency_phase, sampling_rate, low_frequency(lowIt, 1), []);
+            high_frequency_phase = eegfilt(high_frequency_phase, sampling_rate, [], low_frequency(lowIt, 2));
+            high_frequency_phase = angle(hilbert(high_frequency_phase));
+ 
+            % Calculate PAC
+            pac(chanIt, lowIt, highIt) =...
+                abs(sum(exp(1i * (low_frequency_phase - high_frequency_phase)), 'double'))...
+                / length(high_frequency_phase);
+                
+            clear high_frequency_phase
+        end
+        clear highIt low_frequency_phase
+        toc
+    end
+    clear signal lowIt
+end
+clear chanIt
+pacall{a}=pac;
+end 
+
+%%

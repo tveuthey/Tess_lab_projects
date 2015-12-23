@@ -1,0 +1,41 @@
+
+
+function [Output]=plot_channel_waveform_ISI(Waves,TimeStamps,N,chan_no)
+close all
+W=Waves{chan_no,N};
+T=TimeStamps{chan_no,N};
+
+waves=mean(W,2);
+sta_waves=std(W,0,2)/sqrt((size(W,2))-1); hold on;
+% plot(waves,'r')
+% plot((waves)+(2*sta_waves));
+% plot((waves)-(2*sta_waves));
+subplot(1,2,1)
+shadedErrorBar([],waves,(100*sta_waves),'b',0);hold on; %plot(W,'c')
+
+%  plot(waves,'y');
+ XLim([0 30]);
+ YLim([-0.00015 0.00015]); 
+ set(gca,'XTick',[0 30],'FontSize',14,'FontWeight','BOLD');
+ set(gca,'XTickLabel',{'0','1.2'},'FontSize',14,'FontWeight','BOLD'); 
+ set(gca,'YTick',[-0.00015 0 0.00015],'FontSize',14,'FontWeight','BOLD');
+ set(gca,'YTickLabel',{'-150','0','150'},'FontSize',14,'FontWeight','BOLD'); 
+ xlabel('time(msec)','FontSize',14,'FontWeight','BOLD'); ylabel('microvolt','FontSize',14,'FontWeight','BOLD'); 
+ t=['Ch' num2str(chan_no)];
+ title(t,'FontSize',14,'FontWeight','BOLD')
+ 
+ subplot(1,2,2)
+                
+ bar(histc(diff(T),[0.005:0.001:0.100]),'EdgeColor','k','FaceColor','r');
+ set(gca,'XTick',[0 20 40 60 80 100],'FontSize',14,'FontWeight','BOLD');
+ set(gca,'XLim',[0 80.5]);set(gca,'XTickLabel',{'0.00','0.02','0.04','0.06','0.08','0.10'},'FontSize',14,'FontWeight','BOLD')
+ xlabel('Interspike Interval (s)','FontSize',14,'FontWeight','BOLD'); 
+ ylabel ('Counts','FontSize',14,'FontWeight','BOLD'); 
+ t=['ISI Histogram Ch' num2str(chan_no)];
+ title(t,'FontSize',14,'FontWeight','BOLD')
+ set(gcf, 'Position', get(0,'Screensize'));
+ filename=['C:\Users\Ganguly Lab\Documents\MATLAB\Tanuj\Mat_files\Result_figs\BMI\S32\4_23_13\Waveform Ch' num2str(chan_no) '.tiff'];
+%                set(gcf, 'Position', get(0,'Screensize')); 
+               saveas(gcf,filename);
+                
+ Output=waves;

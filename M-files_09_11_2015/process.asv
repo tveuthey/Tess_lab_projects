@@ -1,0 +1,80 @@
+
+%%
+clear block reach_trial reach_trials len_rtr tempper_suc per_suc;
+lim=10;
+reach_trials=[];
+per_suc=[];
+blocklen=100;
+p = 'E:\T29\Day2\';
+[unique_rats temp rat_id unique_dates] = find_rats (p);
+%[unique_rats temp rat_id unique_dates] = find_rats (p);
+[trial_ls]=find_trials(unique_rats,unique_dates,1,1,p);
+temp2 = cellstr(temp);
+temp2 = sort_nat(temp2);
+n=1;
+    for i = 1:length(trial_ls)
+        if rem(i,blocklen)==0
+            block(i/blocklen)=length(reach_trials);
+        end
+            tmp = strcat(p,temp2{i+2});
+            load(tmp);
+            %pause;
+            if PELLET_DROP==1 && t_video_drop>.8
+            reach_trial = view_video (im_lat,1,t_video_drop,t_lat,0);
+            reach_trials=[reach_trials reach_trial];
+            len_rtr=length(reach_trials);
+%             pause;
+            if(length(reach_trials))>lim
+                tmpper_suc = sum(reach_trials(len_rtr-lim:len_rtr-1))/lim;
+             else
+                 tmpper_suc = sum(reach_trials)/length(reach_trials);
+             end
+            
+            per_suc = [per_suc, tmpper_suc];
+        else
+            reach_trial=NaN;
+        end
+    end
+   %%
+   Response=reach_trials;
+   MaxResponse=ones(length(Response),1);
+   BProb=0.2;
+   runanalysis(Response,MaxResponse,BProb)
+   plotresults;
+   trialtotrial;
+   subplot(211)
+   for i=1:4%length(block)
+   plot([block(i) block(i)],[0 1.2],'g','LineWidth',2);
+   end
+   subplot(224)
+   for i=1:4%length(block)
+   plot([block(i) block(i)],[0 length(Response)],'g','LineWidth',2);
+   end
+       
+    %%
+figure; axis on;
+hold on;
+plot(per_suc(1:block(1)-lim)); ylim([-0.1 1.1]);
+yL = get(gca,'YLim');
+line([block(1)-lim block(1)-lim],yL,'Color','r','LineWidth',2);
+for i= 1:length(block)-1
+hold on;
+plot(block(i):block(i+1)-lim,per_suc(block(i):block(i+1)-lim)); ylim([-0.1 1.1]);
+line([block(i+1)-lim block(i+1)-lim],yL,'Color','r','LineWidth',2);
+end
+% saveas(gcf,strcat('T29_beh_avg',int2str(lim)),'tiff')
+j=0;
+k=1;
+for i=1:length(reach_trials)
+    j=j+1;
+    mwin2=[];
+    while((k+lim-1)<block(j))
+    mwin=sum(reach_trials(k:lim+k-1))/lim;
+    mwin2=[mwin2 mwin];
+    k=k+1;
+    end
+    plot(mwin2);ylim([-0.1 1.1]);hold on;
+    yL = get(gca,'YLim');
+    line([block(j) block(j)],yL,'Color','r','LineWidth',2);
+    k=k+10;
+end

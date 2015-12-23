@@ -1,0 +1,144 @@
+%%
+%  if PELLET_DROP==1 && t_video_drop >.50
+%                t_video_drop
+%                reach_trial = view_video (im_lat,1,t_video_drop,t_lat,1)
+%              %pause;
+%  end
+%%
+clear all
+%clear block reach_trial reach_trials len_rtr tempper_suc per_suc;
+lim=10;
+reach_trials=[];
+per_suc=[];
+blocklen=150;
+p = 'E:\T28\Session1\';
+[unique_rats temp rat_id unique_dates] = find_rats (p);
+%[unique_rats temp rat_id unique_dates] = find_rats (p);
+%[trial_ls]=find_trials(unique_rats,unique_dates,1,1,p);
+temp2 = cellstr(temp);
+temp2 = sort_nat(temp2);
+n=1;
+%PELLET_DROP=1;
+trcnt=[];
+    for i = 1:length(temp2)-2
+        if rem(i,blocklen)==0
+            block(i/blocklen)=length(reach_trials);
+        end
+        
+            tmp = strcat(p,temp2{i+2});
+            load(tmp);
+            %pause;
+            %if (PELLET_DROP==1 && t_video_drop >.8)
+            if (t_video_drop >.8)
+            t_video_drop
+               reach_trial = view_video (im_lat,1,t_video_drop,t_lat,1)
+             %pause;
+            reach_trials=[reach_trials reach_trial];
+            len_rtr=length(reach_trials);
+            trcnt(i)=1;
+            %pause;
+            if(length(reach_trials))>lim
+                tmpper_suc = sum(reach_trials(len_rtr-lim:len_rtr-1))/lim;
+            else
+                 tmpper_suc = sum(reach_trials)/length(reach_trials);
+            end
+            
+            per_suc = [per_suc, tmpper_suc];
+        else
+            reach_trial=NaN;
+            trcnt(i)=0;
+            i
+            pause;
+        end
+    end
+    trcnt=trcnt';
+   %%
+   block=[];
+   block(1) = sum(trcnt(1:100));
+   block(2) = sum(trcnt(101:end))+block(1);
+   %block(3) = sum(trcnt(251:350))+block(2);
+   Response=reach_trials;
+   MaxResponse=ones(length(Response),1);
+   BProb=0.2;
+   runanalysis(Response,MaxResponse,BProb)
+   plotresults;
+   trialtotrial;
+   subplot(211)
+   for i=1:length(block)
+   plot([block(i) block(i)],[0 1.2],'g','LineWidth',2);
+   end
+   subplot(224)
+   for i=1:length(block)
+   plot([block(i) block(i)],[0 length(Response)],'g','LineWidth',2);
+   end
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%incorrect modellinh
+% block=[];
+% 
+% block(1) = sum(trcnt(1:100));
+% block(2) = sum(trcnt(101:200))+block(1);
+% block(3) = sum(trcnt(201:300))+block(2);
+% block(4) = sum(trcnt(301:400))+block(3);
+% 
+% cnt = [10,20,29,40];
+% avg=[];
+% for i = 1:length(cnt)
+% k=1;
+%     for j = 1:length(block)
+%         if j==1
+%         avg(i,k) = sum(reach_trials(1:cnt(i)))/cnt(i);
+%         else
+%         avg(i,k) = sum(reach_trials(block(j-1)+1:block(j-1)+cnt(i)+1))/cnt(i);
+%         end
+%     k=k+1;
+%     avg(i,k) = sum(reach_trials(block(j)-2*cnt(i):block(j)-cnt(i)))/cnt(i);
+%     k=k+1;
+%     avg(i,k) = sum(reach_trials(block(j)-cnt(i):block(j)))/cnt(i);
+%     k=k+1;
+%     end
+% end
+
+    %%
+    clear per_suc2
+block=[];
+block(1) = sum(trcnt(1:100));
+block(2) = sum(trcnt(101:end))+block(1);
+%block(3) = sum(trcnt(301:450))+block(2);
+
+%block(3) = sum(trcnt(201:30)0))+block(2);
+%block(4) = sum(trcnt(301:400))+block(3);
+%block(1)=70;
+%block(2)=62+block(1);
+%block(3)=63+block(2);
+lim = 60;
+figure; axis on;
+hold on;
+for i = 1:length(reach_trials)-lim
+    per_suc2(i)=(sum(reach_trials(i:i+lim-1)))/lim;
+end
+plot(per_suc2(1:block(1)-lim)); ylim([-0.1 1.1]);
+yL = get(gca,'YLim');
+line([block(1)-lim block(1)-lim],yL,'Color','r','LineWidth',2);
+for i= 1:length(block)-1
+hold on;
+plot(block(i)+1:block(i+1)-lim,per_suc2(block(i)+1:block(i+1)-lim)); ylim([-0.1 1.1]);
+line([block(i+1)-lim block(i+1)-lim],yL,'Color','r','LineWidth',2);
+end
+
+saveas(gcf,strcat('T30D1_beh_avg',int2str(lim)),'tiff')
+% %%
+% j=0;
+% k=1;
+% for i=1:length(reach_trials)
+%     j=j+1;
+%     mwin2=[];
+%     while((k+lim-1)<block(j))
+%     mwin=sum(reach_trials(k:lim+k-1))/lim;
+%     mwin2=[mwin2 mwin];
+%     k=k+1;
+%     end
+%     plot(mwin2);ylim([-0.1 1.1]);hold on;
+%     yL = get(gca,'YLim');
+%     line([block(j) block(j)],yL,'Color','r','LineWidth',2);
+%     k=k+10;
+% end

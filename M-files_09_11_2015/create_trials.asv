@@ -1,0 +1,39 @@
+close all
+GAP_THRESH=2; %threshold value for gap in spike times
+for chan_no=[17:32]
+    clear trials spikes spont gaps trial_ind 
+% spikes =[1:2:10, 15:1.6:30, 35:0.3:50, 53:0.1:60, 80:1:90];
+spikes=TimeStamps{chan_no,2}
+spont=find(temp3==0);
+
+% spike times in a channel
+
+figure (chan_no);
+subplot(2,1,1)
+plot(histc(diff(spikes),[0:0.1:10]));
+
+gaps=diff(spikes);
+trial_ind=find(gaps>GAP_THRESH)
+trial_ind=[0 trial_ind]+1
+clear trials
+for n=1:length(trial_ind)-1
+    trials{n}=spikes(trial_ind(n):trial_ind(n+1)-1);
+    trials{n}=trials{n} -spikes(trial_ind(n))
+end
+
+trials{n+1}=spikes(trial_ind(n+1):end)
+trials{n+1}=trials{n+1} -spikes(trial_ind(n+1))
+
+subplot(2,1,2)
+
+for n=1:length(trial_ind)
+    if ismember(round(spikes(trial_ind(n))*Fs_lfp),spont)==1
+    plot([trials{n};trials{n}],[n n+1],'k')
+    else
+        plot([trials{n};trials{n}],[n n+1],'r')
+    end
+    hold on;
+end
+filename=['Mat_files/Result_figs/Neurmodulation_250uActDCS' num2str(chan_no) '.tiff'];
+saveas(gcf,filename)
+end

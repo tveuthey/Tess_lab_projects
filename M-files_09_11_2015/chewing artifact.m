@@ -1,0 +1,199 @@
+
+%%
+% clear
+
+
+% load data_block_DemoTank2_Block-565.mat
+
+%temp2=temp2(block);
+%lever1=lever1(block);
+%Slever2=lever2(block);
+
+% find the trial data (ALWAYS RUN PRIOR TO BELOW)
+figure
+temp3=wave(1,:)>2;
+plot(temp3)
+hold on
+start=diff(temp3)>0.5;
+[start]=find(start==1);
+
+%hold_index again
+
+two_pulses=diff(start);
+two_pulses2=find(two_pulses<40);
+
+three_pulses=diff(diff(start));
+three_pulses2=find(three_pulses<10 & three_pulses>-10);
+
+% temp3=wave(1,:)>2;
+% plot(temp3)
+% hold on
+% start=diff(temp3)>0.5;
+% [start]=find(start==1);
+% 
+% two_pulses=diff(start);
+% two_pulses2=find(two_pulses<40);
+
+
+%only look for two pulse
+hold_index=[];
+
+for n=2:(length(two_pulses2)-2)
+    temp1=two_pulses(two_pulses2(n)+1);
+    temp2=two_pulses(two_pulses2(n)-1);
+    if (temp1  > 40) && (temp2 > 40)
+        hold_index=[hold_index (two_pulses2(n))];
+    end
+end
+
+plot(start(hold_index),[1],'rx')
+Reward=start(hold_index);
+
+
+
+
+%only look for three pulse
+hold_index1=[];
+
+for n=2:(length(three_pulses2)-1)
+    hold_index1=[hold_index1 (three_pulses2(n))];
+ end
+
+plot(start(hold_index1),[1],'kx','MarkerSize',12)
+Reach=start(hold_index1);
+
+% for i=1:length(Reward)-1
+%     Reach_ind=find(Reach>Reward(i) & Reach<Reward(i)+10000, 1,'last');
+%     ReachN(:,i)=Reach(Reach_ind)
+%     disp(i)
+% end
+% plot(start(hold_index),[1],'rx')
+% Reward=start(hold_index);
+% plot(start(hold_index1),[1],'kx')
+% Reach=start(hold_index1);
+
+
+%Reach=start(hold_index1([2 3 4 7 9 10 11 12 13 14 16 18 22 24]));
+
+%% get LFP data
+close all
+
+figure
+FILTER_ORDER=4;
+END_SMOOTHING=100;
+
+srate = Fs_lfp;
+nyq_sample=srate/2;
+f_lo=300;
+f_hi=100;
+[b,a]=butter(FILTER_ORDER,f_hi/nyq_sample,'high');
+[d,c]=butter(FILTER_ORDER,10/nyq_sample,'high');
+
+
+
+lfp_chan=[1 3 5 7 2 4 6 8];
+time_before=1000;
+time_after=6000;
+%episodes=10;
+   
+%range=20000:25000;
+lfp_chan=4;    
+
+for n=1:length(Reach)
+    %t=range/Fs_lfp;hol
+    subplot(4,1,1);
+    plot(wave(1,(Reach(n)-time_before):(Reach(n)+time_after)))
+    %tstamps=data_sp(sp_chan,:);
+    %t_data=zeros(episodes,total_time);
+    
+    %stamp_t=tstamps(1000:1000+episodes);
+    %stamp_t=round(stamp_t*Fs_lfp)
+    %for n=1:episodes
+    subplot(4,1,2);
+    temp=data(lfp_chan,round(((Reach(n)-time_before):(Reach(n)+time_after))/2));
+    data_filt1=(abs(filter(b,a,temp))).^2;
+    data_filt1=smooth(data_filt1,END_SMOOTHING);
+    plot(data_filt1)
+    
+    tL=data_filt1;
+    tL=tL-mean(tL);
+    tL=tL(2000:end);
+    
+    subplot(4,1,3)
+    Fs = Fs_lfp;                    % Sampling frequency
+    T = 1/Fs;                     % Sample time
+    L = 4000;                     % Length of signal
+    t = (0:L-1)*T;                % Time vector
+    
+%     freq1=50;
+%     y=(sin (2*5*pi*t)) + (sin (2*2*pi*t)) + (sin (50*2*pi*t));
+%     subplot(2,1,1)
+%     plot(Fs*t(1:800),y(1:800))
+%     xlabel('time (milliseconds)')
+    
+    NFFT = 2^nextpow2(L); % Next power of 2 from length of y
+    Y = fft(tL,NFFT)/L;
+    f = Fs/2*linspace(0,1,NFFT/2+1);
+    %subplot(2,1,2)
+    % Plot single-sided amplitude spectrum.
+    plot(f,2*abs(Y(1:NFFT/2+1)))
+    title('Single-Sided Amplitude Spectrum of y(t) --> 2,5, 100 Hz signals')
+    xlabel('Frequency (Hz)')
+    ylabel('|Y(f)|')
+    xlim([0 20])
+        hold on
+
+        subplot(4,1,4)
+
+    STEP_freq=5;
+    highestband = 50;
+    %Parameter definitions for spectrogram calculation.
+    fs = Fs_lfp; % sampling frequency
+    ol = 1900; % overlap between segments
+    len = 2000; %500; %length of segment
+    l = len - ol;
+    nfft = 1024; %number of points in fft
+    nw = 7/2; % Time bandwidth prodcut for pmtm
+       
+    foo = tL;
+    clear Xtemp Pxx
+    %plot(foo);
+    
+    %subplot(4,1,2);
+    count=1;
+    s = len/2 + 1; % The time point at which you are calculating the spectrum
+    j = 1; %count
+    [s j]
+    %This while loop performs the actual computation using pmtm
+    while s < length(foo) - ol
+        seg = foo(s-len/2:s+len/2);
+        [Pxx(:,j), f] = pmtm(seg,nw,nfft,fs);
+        j = j + 1;
+        s = s + l; % create a new point every l ms ie. every 100ms
+        %disp([s s-len/2 s+len/2]')
+    end
+    NUMBANDS=2;
+    for i = 1:STEP_freq:highestband
+        %Xtemp(count, :) = mean(10*log10(Pxx(i:i+NUMBANDS,:)));
+        Xtemp(count, :) = mean((Pxx(i:i+NUMBANDS,:)));
+        count = count + 1;
+    end
+    subplot(4,1,4);
+    
+    temp=mean(Xtemp');
+    plot_x=1:STEP_freq:highestband;
+    plot(plot_x,temp(1:length(plot_x)))
+    hold on
+    
+%     subplot(4,1,4)
+%     surface(Xtemp);
+%     shading interp
+%     colorbar
+    pause
+end
+
+
+
+
+
+

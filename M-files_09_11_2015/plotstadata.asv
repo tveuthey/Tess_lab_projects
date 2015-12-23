@@ -1,0 +1,17 @@
+function Output=plotstadata(mat_indiv1,mat_indiv2)
+subplot(1,2,1)
+for i=1:size(mat_indiv1,1)
+    
+    plot(mat_indiv1(i,:)'+i*2,'g'); hold on
+    
+end
+xlim([0:1016])
+
+subplot(1,2,2)
+for i=1:size(mat_indiv2,1)
+    
+    plot(mat_indiv2(i,:)'+i*2, 'r'); hold on
+    
+end
+xlim([0:1016])
+Output=size(mat_indiv2);

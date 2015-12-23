@@ -1,0 +1,21 @@
+function [m,s,p] = calc_reachtime(a,b)
+
+rt1 = a.grasp-a.reach*1000/30;
+rt2 = (b.grasp-b.reach)*1000/30;
+
+rt2(isnan(xmax2))=[];
+r=smooth(xmax2,10);
+
+plot(110:length(xmax2)+109-5,xmax2s(6:end),'r'); axis ij;
+ 
+m(1)=mean(xmax(6:35));
+m(2)=mean(xmax(end-29:end));
+m(3)=mean(xmax2(6:35));
+
+s(1)=std(xmax(6:35));
+s(2)=std(xmax(end-29:end));
+s(3)=std(xmax2(6:35));
+
+s=s/sqrt(30);
+[t(1),p(1)] = ttest2(xmax(6:35), xmax(end-29:end));
+[t(2),p(2)] = ttest2(xmax2(6:35), xmax(end-29:end));
